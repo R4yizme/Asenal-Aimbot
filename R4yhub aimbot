@@ -1,0 +1,126 @@
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+local Window = OrionLib:MakeWindow({Name = "R4yhub", HidePremium = false, SaveConfig = true, ConfigFolder = "OrionTest",IntroText = "R4yhub"})
+ 
+
+local Tab = Window:MakeTab({
+    Name = "Main",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+
+local runservice = game:GetService("RunService")
+local players = game:GetService("Players")
+local localplayer = players.LocalPlayer
+local mouse = localplayer:GetMouse()
+local uis = game:GetService("UserInputService")
+local camera = workspace.CurrentCamera
+
+local settings = {
+    Aimbot = true,
+    Aiming = false,
+    AimPart = "Head",
+    TeamCheck = false,
+    DrawFov = true,
+    Fov_radius = 100,
+    Fov_color = Color3.new(255,255,255)
+}
+
+Tab:AddSlider({
+	Name = "Slider",
+	Min = 0,
+	Max = 200,
+	Default = 100,
+	Color = Color3.fromRGB(255,255,255),
+	Increment = 1,
+	ValueName = "Fov radius",
+	Callback = function(Value)
+		settings.Fov_radius = Value
+	end    
+})
+
+
+Tab:AddColorpicker({
+	Name = "Fov color",
+	Default = Color3.fromRGB(255, 0, 0),
+	Callback = function(Value)
+		local color = Value
+        settings.Fov_color = color
+	end	  
+})
+
+Tab:AddButton({
+	Name = "show fov",
+	Callback = function()
+        local fovcircle = Drawing.new("Circle")
+        fovcircle.Visible = settings.DrawFov
+        fovcircle.Thickness = 1
+        fovcircle.Filled = false
+        fovcircle.Transparency = 1
+        fovcircle.Position = Vector2.new(camera.ViewportSize.X / 2,camera.ViewportSize.Y / 2)
+        while  Wait() do
+            fovcircle.Radius = settings.Fov_radius
+            fovcircle.Color = settings.Fov_color
+        end   
+end 
+})
+
+Tab:AddButton({
+    Name = "Aimbot",
+    Callback = function()
+
+        OrionLib:MakeNotification({
+            Name = "Fuck u",
+            Content = "Aimbot on",
+            Image = "rbxassetid://4483345998",
+            Time = 3
+        })
+
+
+        uis.InputBegan:Connect(function(ip)
+            if ip.UserInputType ==  Enum.UserInputType.MouseButton1 then
+             settings.Aiming = true
+            end
+         end)
+         
+         uis.InputEnded:Connect(function(ip)
+             if ip.UserInputType == Enum.UserInputType.MouseButton1 then
+                 settings.Aiming = false
+             end
+         end)
+         
+         runservice.RenderStepped:Connect(function()
+             local dist = math.huge
+             local closestchar = nil
+         
+             if settings.Aiming then
+                 for i, v in next, players:GetChildren() do
+                     
+                     if v ~= localplayer and v.Character:FindFirstChild("HumanoidRootPart") then
+                        if settings.Aimbot == true and v.TeamColor ~= localplayer.TeamColor and v.Character:FindFirstChild("Humanoid").Health > 0 then
+                             local char = v.Character
+                             local char_part_pos, is_onscreen = camera:WorldToViewportPoint(char[settings.AimPart].Position)
+                             
+                             if is_onscreen then
+                                 local magnitude = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(char_part_pos.X, char_part_pos.Y)).Magnitude
+                                 
+                                 if magnitude < dist and magnitude < settings.Fov_radius then
+                                     dist = magnitude
+                                     closestchar = char
+                                 end
+                             end
+                         end
+                        end 
+                     end
+
+                 if closestchar ~= nil and
+                 closestchar:FindFirstChild("HumanoidRootPart") and
+                 closestchar:FindFirstChild("Humanoid").Health > 0 then
+                     
+                     camera.CFrame = CFrame.new(camera.CFrame.Position, closestchar[settings.AimPart].Position)
+                 end
+             end
+         end)
+         
+    end
+})
